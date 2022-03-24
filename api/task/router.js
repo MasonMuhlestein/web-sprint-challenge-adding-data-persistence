@@ -1,29 +1,34 @@
 // build your `/api/tasks` router here
-const express = require('express')
+const express = require('express');
 const Tasks = require('./model')
-const router = express.Router()
+const router = require('express').Router();
 
-router.get('/', (req, res, next) => {
-    Tasks.getAll()
-    .then((task) => {
-        res.status(200).json(task)
-    })
-    .catch(next)
-})
-
-router.post('/', async (req, res, next) => { 
-    try{
-        const newTask = await Tasks.create(req.body)
-        res.status(201).json({
-            task_id: newTask.task_id,
-            task_description: newTask.task_description,
-            task_notes: newTask.task_notes,
-            task_completed: newTask.task_completed === 0 ? false : true,
-            project_id: newTask.project_id
+router.get('/', (req,res,next)=>{
+    Tasks.getTasks()
+    .then(tasks =>{
+        tasks.map(task=>{
+            if (task.task_completed === 0){
+                task.task_completed = false;
+            }else{
+                task.task_completed = true;  
+            }
         })
-    }catch(err){
-        next(err)
-    }
+        res.status(200).json(tasks);
+    })
+    .catch(next);
 })
 
-module.exports = router
+router.post('/', (req,res,next)=>{
+    Tasks.insert(req.body)
+    .then(task =>{
+        if (task.task_completed === 0){
+            task.task_completed = false;
+            res.status(201).json(task);
+        }else{
+            task.task_completed = true;
+            res.status(201).json(task); 
+        }
+    }).catch(next);
+})
+
+module.exports = router;

@@ -1,28 +1,43 @@
 // build your `/api/projects` router here
 const express = require('express')
 const Projects = require('./model')
-const router = express.Router()
+const router = require('express').Router()
 
-router.get('/', (req, res, next) => {
-    Projects.getAll()
-    .then((projects) => {
-        res.status(200).json(projects)
+router.post('/', (req, res, next) => {
+    Projects.insert(req.body)
+    .then(project => {
+        if (project.project_completed ===0){
+            project.project_completed = false;
+            res.status(201).json(project);
+        }else {
+            project.project_completed = true;
+            res.status(201).json(project);
+        }
     })
-    .catch(next)
-})
+    .catch(next);
+});
 
-router.post('/', async (req, res, next) => {
-    try{
-        const newProject = await Projects.create(req.body)
-        res.status(200).json({
-            project_id: newProject.project_id,
-            project_name: newProject.project_name,
-            project_description: newProject.project_description,
-            project_completed: newProject.project_completed === 0 ? false : true
+router.get('/', async (req, res, next) => {
+    await Projects.getProjects()
+        .then(projects => {
+            projects.map(project => {
+                if (project.project_completed ===0) {
+                    project.project_completed = false;
+                } else {
+                    project.project_completed = true;
+                }
+            })
+            res.status(200).json(projects)
         })
-    }catch(err){
-        next(err)
-    }
-})
+        .catch(next);
+});
 
-module.exports = router
+router.use((err, req, res, next) => {
+    res.status(500).json({
+        errorMessage: 'something went wrong',
+        message: err.message,
+        stack: err.stack,
+    });
+});
+
+module.exports = router;
